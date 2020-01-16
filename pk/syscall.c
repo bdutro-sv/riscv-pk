@@ -13,6 +13,8 @@ typedef long (*syscall_t)(long, long, long, long, long, long, long);
 
 #define CLOCK_FREQ 1000000000
 
+uint64_t clock_offset = 0;
+
 void sys_exit(int code)
 {
   if (current.cycle0) {
@@ -389,7 +391,7 @@ int sys_times(long* loc)
 
 int sys_gettimeofday(long* loc)
 {
-  uint64_t t = rdcycle64();
+  uint64_t t = rdcycle64() + clock_offset;
   loc[0] = t / CLOCK_FREQ;
   loc[1] = (t % CLOCK_FREQ) / (CLOCK_FREQ / 1000000);
   
@@ -398,11 +400,20 @@ int sys_gettimeofday(long* loc)
 
 long sys_clock_gettime(int clk_id, long *loc)
 {
-  uint64_t t = rdcycle64();
+  uint64_t t = rdcycle64() + clock_offset;
   loc[0] = t / CLOCK_FREQ;
   loc[1] = (t % CLOCK_FREQ) / (CLOCK_FREQ / 1000000000);
 
   return 0;
+}
+
+static int sys_nanosleep(const long* req, long* rem)
+{
+    // Return immediately, but offset the clock value to trick the program into thinking time has passed
+    clock_offset += req[0] * CLOCK_FREQ + req[1] * (CLOCK_FREQ / 1000000000);
+    rem[0] = 0;
+    rem[1] = 0;
+    return 0;
 }
 
 ssize_t sys_writev(int fd, const long* iov, int cnt)
@@ -436,6 +447,13 @@ static int sys_stub_success()
 static int sys_stub_nosys()
 {
   return -ENOSYS;
+}
+
+static int sys_sysinfo(void* info) {
+  struct frontend_sysinfo buf;
+  long ret = frontend_syscall(SYS_sysinfo, va2pa(info), 0, 0, 0, 0, 0, 0);
+  copy_sysinfo(info, &buf);
+  return ret;
 }
 
 long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, unsigned long n)
@@ -489,6 +507,8 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, unsigned l
     [SYS_set_tid_address] = sys_stub_nosys,
     [SYS_set_robust_list] = sys_stub_nosys,
     [SYS_madvise] = sys_stub_nosys,
+    [SYS_sysinfo] = sys_sysinfo,
+    [SYS_nanosleep] = sys_nanosleep
   };
 
   const static void* old_syscall_table[] = {

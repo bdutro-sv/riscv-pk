@@ -53,3 +53,21 @@ void copy_stat(struct stat* dest, struct frontend_stat* src)
   dest->st_mtime = src->mtime;
   dest->st_ctime = src->ctime;
 }
+
+void copy_sysinfo(struct sysinfo* dest, struct frontend_sysinfo* src)
+{
+  dest->uptime = src->uptime;
+  dest->loads[0] = src->loads[0];
+  dest->loads[1] = src->loads[1];
+  dest->loads[2] = src->loads[2];
+  dest->totalram = src->totalram;
+  dest->freeram = src->freeram;
+  dest->sharedram = src->sharedram;
+  dest->bufferram = src->bufferram;
+  dest->totalswap = src->totalswap;
+  dest->freeswap = src->freeswap;
+  dest->procs = src->procs;
+  dest->totalhigh = src->totalhigh;
+  dest->freehigh = src->freehigh;
+  dest->mem_unit = src->mem_unit;
+}

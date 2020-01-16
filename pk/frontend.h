@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 
 void shutdown(int) __attribute__((noreturn));
 long frontend_syscall(long n, uint64_t a0, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5, uint64_t a6);
@@ -32,6 +33,22 @@ struct frontend_stat {
   uint32_t __unused5;
 };
 
+struct frontend_sysinfo {
+  int64_t uptime;         /* Seconds since boot */
+  uint64_t loads[3];      /* 1, 5, and 15 minute load averages */
+  uint64_t totalram;      /* Total usable main memory size */
+  uint64_t freeram;       /* Available memory size */
+  uint64_t sharedram;     /* Amount of shared memory */
+  uint64_t bufferram;     /* Memory used by buffers */
+  uint64_t totalswap;     /* Total swap space size */
+  uint64_t freeswap;      /* swap space still available */
+  uint16_t procs;                    /* Number of current processes */
+  uint64_t totalhigh;     /* Total high memory size */
+  uint64_t freehigh;      /* Available high memory size */
+  uint32_t mem_unit;                 /* Memory unit size in bytes */
+};
+
 void copy_stat(struct stat* dest, struct frontend_stat* src);
+void copy_sysinfo(struct sysinfo* dest, struct frontend_sysinfo* src);
 
 #endif
